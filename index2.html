@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Chat with AI</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            color: #4682B4;
+            font-size: 48px;
+            margin: 0;
+        }
+        #thread-info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f0f8ff;
+            border: 2px solid #4682B4;
+            border-radius: 5px;
+            display: none;
+        }
+        #thread-info h2 {
+            margin-top: 0;
+            color: #4682B4;
+        }
+    </style>
+</head>
+<body>
+    
+    <h1>Live Chat with AI</h1>
+    
+    <div id="thread-info">
+        <h2>Chat Session Information</h2>
+        <p><strong>Thread ID:</strong> <span id="thread-id">Not yet captured</span></p>
+        <p><strong>Status:</strong> <span id="status">Monitoring...</span></p>
+    </div>
+    
+    <div id="divicw" data-bind="E2421ABF-7E91-421D-A5D2-9E9EA6183878" data-org=""></div><script>var i={t:function(t){var e="https://media.imi.chat/widget/js/imichatinit.js";try{var o=new XMLHttpRequest;o.onreadystatechange=function(){if(this.readyState==4){var t=document.getElementById("divicw");if(this.status==0){i.o(t);return}var e=document.createElement("script");e.innerHTML=this.responseText;t.parentNode.insertBefore(e,t.nextSibling)}};o.open("GET",e,true);o.send()}catch(s){console.error(s)}},o:function(t){t.insertAdjacentHTML("afterend",'<iframe id="tls_al_frm" frameborder="0" style="overflow: hidden;height: 208px;width: 394px;position: fixed;display: block;right: 48px;bottom: 12px;z-index: 99999; display:none;"></iframe>');var e=document.getElementById("tls_al_frm");var o=e.contentWindow||(e.contentDocument.document||e.contentDocument);o.document.open();o.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Untitled Document</title><style>body{font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;color: #99a0b0;font-size: 14px;}.popover__content{background-color: #fbfbfe; padding: 1.5rem; border-radius: 5px; width: 300px; box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);position: relative;}.popover__message{font-weight: 600;color:#56627c;font-size: 16px;}.pull-left{float:left;}.clearfix{clear: both;}.hdr-txt{width: 218px; margin-top: 3px;}.para-txt a{text-decoration: none;color: #005cde;}.close-btn{position: absolute;right:15px;top:15px;}.close-btn a{text-decoration: none;font-weight: 400; color: #56627c; font-size: 16px;}</style></head><body><div class="popover__content"><div class="close-btn"><a href="#" onclick="closeTLSAlert();">X</a></div><div class="popover__message"><div class="pull-left hdr-txt">This browser version is not supported on LiveChat.</div></div><div class="clearfix"></div><p class="para-txt">Please update your browser to the latest version and re-open the website to access the widget. </p></div><script>function closeTLSAlert(){window.parent.postMessage({key: "close_tls_alert",value: "close_tls_alert",action: "close_tls_alert"}, "*");}<\/script></body></html>');o.document.close();e.style.display="block";window.addEventListener("message",function(t){if(t.data.action=="close_tls_alert"){i.s()}})},s:function(){var t=document.getElementById("tls_al_frm");t.remove()}};i.t(function(t){});</script>
+    
+    <script>
+        // Network monitoring for IMI Chat widget
+        (function() {
+            console.log('IMI Chat Monitor: Initialized');
+            
+            // Store the original fetch function
+            const originalFetch = window.fetch;
+            
+            // Override fetch to intercept network requests
+            window.fetch = function(...args) {
+                const [url, options] = args;
+                
+                // Call the original fetch
+                return originalFetch.apply(this, args)
+                    .then(response => {
+                        // Clone the response so we can read it without consuming it
+                        const clonedResponse = response.clone();
+                        
+                        // Check if this is an IMI chat related request
+                        if (url && (url.includes('imi.chat') || url.includes('imichat'))) {
+                            console.log('IMI Chat Request detected:', url);
+                            
+                            // Try to read the response as JSON
+                            clonedResponse.json()
+                                .then(data => {
+                                    console.log('Response data:', data);
+                                    
+                                    // Look for threadId in the response
+                                    if (data && data.threadId) {
+                                        handleThreadId(data.threadId, data);
+                                    } else if (data && typeof data === 'object') {
+                                        // Search nested objects for threadId
+                                        searchForThreadId(data);
+                                    }
+                                })
+                                .catch(err => {
+                                    console.log('Could not parse response as JSON:', err);
+                                });
+                        }
+                        
+                        // Return the original response
+                        return response;
+                    });
+            };
+            
+            // Override XMLHttpRequest to intercept network requests
+            const originalXHROpen = XMLHttpRequest.prototype.open;
+            const originalXHRSend = XMLHttpRequest.prototype.send;
+            
+            XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+                this._url = url;
+                this._method = method;
+                return originalXHROpen.apply(this, [method, url, ...rest]);
+            };
+            
+            XMLHttpRequest.prototype.send = function(body) {
+                this.addEventListener('load', function() {
+                    if (this._url && (this._url.includes('imi.chat') || this._url.includes('imichat'))) {
+                        console.log('XHR IMI Chat Request detected:', this._url);
+                        
+                        try {
+                            const responseData = JSON.parse(this.responseText);
+                            console.log('XHR Response data:', responseData);
+                            
+                            if (responseData && responseData.threadId) {
+                                handleThreadId(responseData.threadId, responseData);
+                            } else if (responseData && typeof responseData === 'object') {
+                                searchForThreadId(responseData);
+                            }
+                        } catch (err) {
+                            console.log('Could not parse XHR response as JSON:', err);
+                        }
+                    }
+                });
+                
+                return originalXHRSend.apply(this, arguments);
+            };
+            
+            // Function to handle when threadId is found
+            function handleThreadId(threadId, fullData) {
+                console.log('Thread ID captured:', threadId);
+                console.log('Full data:', fullData);
+                
+                // Update the UI
+                document.getElementById('thread-info').style.display = 'block';
+                document.getElementById('thread-id').textContent = threadId;
+                document.getElementById('status').textContent = 'Chat session started!';
+                document.getElementById('status').style.color = '#28a745';
+                
+                // Store threadId for later use
+                window.imiChatThreadId = threadId;
+                window.imiChatData = fullData;
+                
+                // Dispatch a custom event so other scripts can listen for it
+                window.dispatchEvent(new CustomEvent('imiChatStarted', {
+                    detail: {
+                        threadId: threadId,
+                        data: fullData
+                    }
+                }));
+            }
+            
+            // Recursive function to search for threadId in nested objects
+            function searchForThreadId(obj, path = '') {
+                for (let key in obj) {
+                    if (obj.hasOwnProperty(key)) {
+                        const value = obj[key];
+                        const currentPath = path ? `${path}.${key}` : key;
+                        
+                        if (key.toLowerCase().includes('threadid') || key.toLowerCase() === 'thread') {
+                            console.log(`Found threadId at ${currentPath}:`, value);
+                            handleThreadId(value, obj);
+                        } else if (typeof value === 'object' && value !== null) {
+                            searchForThreadId(value, currentPath);
+                        }
+                    }
+                }
+            }
+            
+            // Listen for custom events from the widget
+            window.addEventListener('message', function(event) {
+                console.log('Message received:', event.data);
+                
+                if (event.data && typeof event.data === 'object') {
+                    if (event.data.threadId) {
+                        handleThreadId(event.data.threadId, event.data);
+                    } else {
+                        searchForThreadId(event.data);
+                    }
+                }
+            });
+            
+            console.log('IMI Chat Monitor: Ready to capture threadId');
+        })();
+        
+        // Optional: Listen for the custom event
+        window.addEventListener('imiChatStarted', function(e) {
+            console.log('Custom event fired - Chat started with thread:', e.detail.threadId);
+            // You can add additional logic here when chat starts
+        });
+    </script>
+    
+    <br>
+    <a href="Participants.html">Participants</a>
+</body>
+</html>
