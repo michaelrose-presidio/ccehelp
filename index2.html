@@ -134,6 +134,9 @@
                 window.imiChatThreadId = threadId;
                 window.imiChatData = fullData;
                 
+                // Send POST request to Webex webhook
+                sendToWebex(threadId);
+                
                 // Dispatch a custom event so other scripts can listen for it
                 window.dispatchEvent(new CustomEvent('imiChatStarted', {
                     detail: {
@@ -141,6 +144,50 @@
                         data: fullData
                     }
                 }));
+            }
+            
+            // Function to send threadId to Webex webhook
+            function sendToWebex(threadId) {
+                const webhookUrl = 'https://hooks.us.webexconnect.io/events/VJHIJT73AK';
+                const payload = {
+                    threadId: threadId,
+                    userToken: '123456-abdcef-xyz987'
+                };
+                
+                console.log('Sending to Webex:', payload);
+                
+                fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(response => {
+                    console.log('Webex webhook response status:', response.status);
+                    
+                    // Update status in UI
+                    const statusEl = document.getElementById('status');
+                    if (response.ok) {
+                        statusEl.textContent = 'Chat session started and sent to Webex!';
+                        statusEl.style.color = '#28a745';
+                        console.log('Successfully sent to Webex webhook');
+                    } else {
+                        statusEl.textContent = 'Chat session started (Webex send failed)';
+                        statusEl.style.color = '#ff8c00';
+                        console.error('Failed to send to Webex webhook:', response.status);
+                    }
+                    
+                    return response.text();
+                })
+                .then(data => {
+                    console.log('Webex webhook response:', data);
+                })
+                .catch(error => {
+                    console.error('Error sending to Webex webhook:', error);
+                    document.getElementById('status').textContent = 'Chat session started (Webex send error)';
+                    document.getElementById('status').style.color = '#dc3545';
+                });
             }
             
             // Recursive function to search for threadId in nested objects
